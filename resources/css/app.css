@@ -1,0 +1,171 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+
+
+/* Styles globaux */
+body {
+    
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--dark);
+    background-color: #f1f5f9;
+    /* font-family: 'Nunito', sans-serif; */
+}
+
+/* Hero section */
+.hero-section {
+    background-color: #4a64f7;
+    padding: 80px 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://cdn.jsdelivr.net/gh/perseusprince070/images_repo/event-crowd.jpg");
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 7rem 0;
+}
+
+/* Cards */
+.card {
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Footer */
+footer {
+    padding-top: 60px;
+    margin-top: 60px;
+}
+
+footer .social-icons a {
+    font-size: 1.2rem;
+    margin-right: 15px;
+}
+
+/* Event page */
+.event-details .card-img-top {
+    height: 300px;
+    object-fit: cover;
+}
+
+/* Dashboard */
+.dashboard-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Buttons */
+.btn-primary {
+    
+    background-color: var(--primary);
+    border-color: var(--primary);
+    /* background-color: #4a6cf7;
+    border-color: #4a6cf7; */
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    /* background-color: #3959e3;
+    border-color: #3959e3; */
+}
+
+/* Form elements */
+.form-control:focus, .form-select:focus {
+    border-color: #4a6cf7;
+    box-shadow: 0 0 0 0.25rem rgba(74, 108, 247, 0.25);
+}
+
+/* Event cards */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.testimonial {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+.testimonial-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 1rem;
+}
+
+
+
+
+/* HEY */
+
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --secondary: #f97316;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --gray: #94a3b8;
+}
+
+.navbar-custom {
+    background-color: var(--primary);
+}
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+    color: white;
+}
+.navbar-custom .nav-link:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+
+
+
+
+
+.event-date {
+    background-color: var(--primary);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 5px;
+    font-weight: bold;
+    display: inline-block;
+}
+.tab-content {
+    padding: 20px;
+    border: 1px solid #dee2e6;
+    border-top: 0;
+    border-radius: 0 0 0.25rem 0.25rem;
+}
+#app-showcase {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
