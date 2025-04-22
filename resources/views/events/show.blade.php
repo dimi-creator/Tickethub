@@ -65,7 +65,7 @@
                     
                     <div class="d-flex justify-content-between mb-3">
                         <span>Prix:</span>
-                        <span class="text-primary fw-bold">{{ number_format($event->price, 2, ',', ' ') }} €</span>
+                        <span class="text-primary fw-bold">{{ number_format($event->price, 2, ',', ' ') }} fcfa</span>
                     </div>
                     
                     <div class="d-flex justify-content-between mb-3">
@@ -152,7 +152,7 @@
                             <p class="mb-1"><strong>Événement:</strong> {{ $event->title }}</p>
                             <p class="mb-1"><strong>Date:</strong> {{ $event->start_date->format('d/m/Y H:i') }}</p>
                             <p class="mb-1"><strong>Lieu:</strong> {{ $event->venue }}</p>
-                            <p class="mb-0"><strong>Prix unitaire:</strong> {{ number_format($event->price, 2, ',', ' ') }} €</p>
+                            <p class="mb-0"><strong>Prix unitaire:</strong> {{ number_format($event->price, 2, ',', ' ') }} fcfa</p>
                         </div>
                     </div>
                     

@@ -130,7 +130,7 @@
                                             <td>{{ $sale->created_at->format('d/m/Y H:i') }}</td>
                                             <td>{{ $sale->event->title }}</td>
                                             <td>{{ $sale->user->name }}</td>
-                                            <td>{{ number_format($sale->amount, 2, ',', ' ') }} €</td>
+                                            <td>{{ number_format($sale->amount, 2, ',', ' ') }} fcfa</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

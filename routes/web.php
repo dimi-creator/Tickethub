@@ -1,5 +1,6 @@
 <?php
 
+
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
@@ -39,6 +40,7 @@ Route::post('/contact', [HomeController::class, 'storeContact'])->name('contact.
 // Routes des événements
 Route::get('/evenements', [EventController::class, 'index'])->name('events.index');
 Route::get('/evenements/{event}', [EventController::class, 'show'])->name('events.show');
+// Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
 
 // Routes protégées par authentification
 Route::middleware('auth')->group(function () {
@@ -66,20 +68,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/statistiques', [DashboardController::class, 'statistics'])->name('dashboard.statistics');
     
     // Gestion des événements (pour organisateurs)
-    Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
-    Route::post('/evenements', [EventController::class, 'store'])->name('events.store');
-    Route::get('/evenements/{event}/modifier', [EventController::class, 'edit'])->name('events.edit');
-    Route::put('/evenements/{event}', [EventController::class, 'update'])->name('events.update');
-    Route::delete('/evenements/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+    Route::get('/events/creer', [EventController::class, 'create'])->name('events.create');
+    Route::post('/events', [EventController::class, 'store'])->name('events.store');
+    Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+    Route::put('/events/{event}/update', [EventController::class, 'update'])->name('events.update');
+    Route::delete('/events/destroy', [EventController::class, 'destroy'])->name('events.destroy');
     
     // Devenir organisateur
     Route::get('/devenir-organisateur', [OrganizerController::class, 'create'])->name('organizer.create');
     Route::post('/devenir-organisateur', [OrganizerController::class, 'store'])->name('organizer.store');
 
 
-    // Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-          
-    // Route::post('register', [RegisteredUserController::class, 'store']);
     
    
 

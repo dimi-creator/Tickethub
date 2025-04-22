@@ -28,17 +28,31 @@ class EventController extends Controller
     {
         return view('events.show', compact('event'));
     }
-    
+                
     public function create()
     {
-        $this->authorize('create', Event::class);
+
+       
+        // Vérifier si l'utilisateur est un organisateur
+        if (!auth()->user()->isOrganizer()) {
+            return redirect()->route('organizer.create')
+                ->with('info', 'Vous devez d\'abord devenir organisateur pour créer un événement.');
+        }
         
         return view('events.create');
+    
+        
     }
+    
+    
+   
     
     public function store(Request $request)
     {
-        $this->authorize('create', Event::class);
+        if (!auth()->user()->isOrganizer()) {
+            return redirect()->route('organizer.create')
+                ->with('info', 'Vous devez d\'abord devenir organisateur pour créer un événement.');
+        }
         
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -66,16 +80,30 @@ class EventController extends Controller
     }
     
     public function edit(Event $event)
-    {
-        $this->authorize('update', $event);
+    {  
+        // $this->authorize('update', $event);
+        
+        // Vérifier si l'utilisateur est un organisateur
+       
+
+        if (!auth()->user()->isOrganizer()) {
+            return redirect()->route('organizer.create')
+                ->with('info', 'Vous devez d\'abord devenir organisateur pour créer un événement.');
+        }
         
         return view('events.edit', compact('event'));
+        
     }
     
     public function update(Request $request, Event $event)
     {
-        $this->authorize('update', $event);
+
+        if (!auth()->user()->isOrganizer()) {
+            return redirect()->route('organizer.create')
+                ->with('info', 'Vous devez d\'abord devenir organisateur pour créer un événement.');
+        }
         
+       
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -103,13 +131,14 @@ class EventController extends Controller
         }
         
         $event->update($validated);
+        // $event->save();
         
         return redirect()->route('dashboard.events')->with('success', 'Événement mis à jour avec succès.');
     }
     
     public function destroy(Event $event)
     {
-        $this->authorize('delete', $event);
+        // $this->authorize('delete', $event);
         
         // Vérifier si l'événement a des tickets vendus
         if ($event->tickets()->whereIn('status', ['paid', 'used'])->count() > 0) {

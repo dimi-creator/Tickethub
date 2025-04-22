@@ -48,7 +48,7 @@
                             </p>
                             <p class="card-text">{{ Str::limit($event->description, 100) }}</p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-primary fw-bold">{{ number_format($event->price, 2, ',', ' ') }} €</span>
+                                <span class="text-primary fw-bold">{{ number_format($event->price, 2, ',', ' ') }} fcfa</span>
                                 <a href="{{ route('events.show', $event) }}" class="btn btn-outline-primary">Voir détails</a>
                             </div>
                         </div>
