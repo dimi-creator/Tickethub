@@ -79,8 +79,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/devenir-organisateur', [OrganizerController::class, 'store'])->name('organizer.store');
 
 
+    // Routes pour le processus d'achat et paiement
+    // Route::middleware('auth')->group(function () {
+    // Achat de billets
+    Route::post('/tickets/acheter', [TicketController::class, 'purchase'])->name('tickets.purchase');
+    Route::get('/tickets/confirmation', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
+    
+    // Paiement
+    Route::get('/paiement', [PaymentController::class, 'show'])->name('payment.show');
+    Route::post('/paiement/carte', [PaymentController::class, 'processCreditCard'])->name('payment.process.credit-card');
+    Route::post('/paiement/paypal', [PaymentController::class, 'processPaypal'])->name('payment.process.paypal');
+    Route::get('/paiement', [PaymentController::class, 'pay'])->name('payments.pay');
+
+});
+
+
     
    
 
     
-});
+
