@@ -159,7 +159,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <form id="deleteForm" action="" method="POST">
+                <form id="deleteForm" action="{{ route('events.destroy', $event->id) }}" method="POST">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Supprimer</button>
@@ -183,7 +183,7 @@
                 const deleteForm = document.getElementById('deleteForm');
                 const eventTitleElement = document.getElementById('eventTitle');
                 
-                deleteForm.action = `/evenements/${eventId}`;
+                deleteForm.action = `/events/${eventId}`;
                 eventTitleElement.textContent = eventTitle;
             });
         }

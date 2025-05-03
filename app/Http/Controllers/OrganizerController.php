@@ -53,4 +53,34 @@ class OrganizerController extends Controller
         return redirect()->route('dashboard.organizer')
             ->with('success', 'Félicitations ! Vous êtes maintenant un organisateur et pouvez créer des événements.');
     }
+
+
+     /**
+          * Update the organizer's profile information.
+        */
+   public function update(Request $request): RedirectResponse
+   {
+        $validated = $request->validate([
+       'company_name' => 'required|string|max:255',
+       'description' => 'nullable|string',
+       'website' => 'nullable|url|max:255',
+       'logo' => 'nullable|image|max:2048',
+      ]);
+   
+         $organizer = auth()->user()->organizer;
+   
+         if ($request->hasFile('logo')) {
+          // Supprimer l'ancien logo si existant
+          if ($organizer->logo) {
+           Storage::disk('public')->delete($organizer->logo);
+         }
+       
+       $path = $request->file('logo')->store('organizers', 'public');
+       $validated['logo'] = $path;
+     }
+   
+      $organizer->update($validated);
+   
+     return Redirect::route('profile.edit')->with('success', 'Informations de l\'organisation mises à jour avec succès.');
+   }
 }

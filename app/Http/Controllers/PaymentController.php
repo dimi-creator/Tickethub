@@ -9,6 +9,8 @@ use App\Mail\TicketMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
+use Illuminate\Support\Facades\Http;
+
 
 class PaymentController extends Controller
 {
@@ -31,7 +33,7 @@ class PaymentController extends Controller
                 "purchase_units" => [
                     [
                         "amount" => [
-                            "currency_code" => "fcfa",
+                            "currency_code" => "EUR",
                             "value" => number_format($totalAmount, 2, '.', '')
                         ],
                         "description" => "Paiement billet",
@@ -224,5 +226,48 @@ class PaymentController extends Controller
 
     return view('payment.show', compact('ticketData', 'event'));
   }
+
+
+  public function createOrder(Request $request)
+  {
+      $clientId = env('PAYPAL_CLIENT_ID');
+      $secret = env('PAYPAL_CLIENT_SECRET');
+      $mode = env('PAYPAL_MODE', 'sandbox');
+
+      $baseUrl = $mode === 'live'
+          ? 'https://api-m.paypal.com'
+          : 'https://api-m.sandbox.paypal.com';
+
+      // 1. Récupérer un access token
+      $authResponse = Http::withBasicAuth($clientId, $secret)
+          ->asForm()
+          ->post("$baseUrl/v1/oauth2/token", [
+              'grant_type' => 'client_credentials'
+          ]);
+
+      if (!$authResponse->ok()) {
+          return response()->json(['error' => 'Erreur d\'authentification PayPal'], 500);
+      }
+
+      $accessToken = $authResponse->json()['access_token'];
+
+      // 2. Créer une commande
+      $orderResponse = Http::withToken($accessToken)
+          ->post("$baseUrl/v2/checkout/orders", [
+              'intent' => 'CAPTURE',
+              'purchase_units' => [[
+                  'amount' => [
+                      'currency_code' => 'EUR',
+                      'value' => '10.00'
+                  ]
+              ]]
+          ]);
+
+      if (!$orderResponse->ok()) {
+          return response()->json(['error' => 'Erreur lors de la création de la commande'], 500);
+      }
+
+      return response()->json($orderResponse->json());
+   }
 
 }

@@ -66,13 +66,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/organisateur', [DashboardController::class, 'organizerDashboard'])->name('dashboard.organizer');
     Route::get('/dashboard/evenements', [DashboardController::class, 'events'])->name('dashboard.events');
     Route::get('/dashboard/statistiques', [DashboardController::class, 'statistics'])->name('dashboard.statistics');
+
+    // Mise à jour des informations d'organisateur
+    Route::patch('/organizer', [OrganizerController::class, 'update'])->name('organizer.update');
     
     // Gestion des événements (pour organisateurs)
     Route::get('/events/creer', [EventController::class, 'create'])->name('events.create');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::put('/events/{event}/update', [EventController::class, 'update'])->name('events.update');
-    Route::delete('/events/destroy', [EventController::class, 'destroy'])->name('events.destroy');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
     
     // Devenir organisateur
     Route::get('/devenir-organisateur', [OrganizerController::class, 'create'])->name('organizer.create');
@@ -90,6 +93,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/paiement/carte', [PaymentController::class, 'processCreditCard'])->name('payment.process.credit-card');
     Route::post('/paiement/paypal', [PaymentController::class, 'processPaypal'])->name('payment.process.paypal');
     Route::get('/paiement', [PaymentController::class, 'pay'])->name('payments.pay');
+    Route::post('/paypal/order', [App\Http\Controllers\PaymentController::class, 'createOrder']);
+
+
 
 });
 

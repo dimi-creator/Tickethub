@@ -34,16 +34,16 @@
 </div>
 
 <!-- Script SDK PayPal -->
-<script src="https://www.paypal.com/sdk/js?client-id={{ config('paypal.sandbox.client_id') }}&currency=EUR"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=ATzdNnpCOF4u6_B4dUDQrUmBtdC_os0gd0oFJAXiHVNg9Id7fqYCtZgxqz45m9gboFZjIob77AN3Nd6r&currency=EUR"></script>
 
 <script>
 paypal.Buttons({
     createOrder: function(data, actions) {
-        return fetch("{{ route('payment.process') }}", {
+        return fetch('/paypal/order', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
-                'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             },
             body: JSON.stringify({
                 event_id: "{{ $ticket['event_id'] }}",
