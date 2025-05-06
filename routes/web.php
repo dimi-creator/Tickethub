@@ -89,15 +89,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/confirmation', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
     
     // Paiement
-    Route::get('/paiement', [PaymentController::class, 'show'])->name('payment.show');
+    // Route::get('/paiement', [PaymentController::class, 'show'])->name('payment.show');
     Route::post('/paiement/carte', [PaymentController::class, 'processCreditCard'])->name('payment.process.credit-card');
     Route::post('/paiement/paypal', [PaymentController::class, 'processPaypal'])->name('payment.process.paypal');
     Route::get('/paiement', [PaymentController::class, 'pay'])->name('payments.pay');
-    Route::post('/paypal/order', [App\Http\Controllers\PaymentController::class, 'createOrder']);
-
+    Route::post('/paypal/create-order', [PaymentController::class, 'createOrder'])->name('paypal.create-order');
+    Route::post('/paypal/capture-order', [PaymentController::class, 'captureOrder'])->name('paypal.capture-order');
+    
 
 
 });
+
 
 
     

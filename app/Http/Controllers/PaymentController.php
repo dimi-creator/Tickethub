@@ -13,7 +13,11 @@ use Illuminate\Support\Facades\Http;
 
 
 class PaymentController extends Controller
+
+
 {
+        
+
     public function process(Request $request)
     {
         if ($request->expectsJson()) {
@@ -48,16 +52,6 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Erreur PayPal'], 500);
         }
 
-
-
-
-
-
-
-
-
-
-
         $validated = $request->validate([
             'event_id' => 'required|exists:events,id',
             'quantity' => 'required|integer|min:1',
@@ -89,42 +83,8 @@ class PaymentController extends Controller
         ]);
 
         return redirect()->route('payments.pay');
-
-        
-        // Initialisation de PayPal
-        // $provider = new PayPalClient;
-        // $provider->setApiCredentials(config('paypal'));
-        // $provider->getAccessToken();
-        
-        // Création de l'ordre PayPal
-        // $response = $provider->createOrder([
-        //     "intent" => "CAPTURE",
-        //     "application_context" => [
-        //         "return_url" => route('payment.success'),
-        //         "cancel_url" => route('payment.cancel'),
-        //     ],
-        //     "purchase_units" => [
-        //         [
-        //             "amount" => [
-        //                 "currency_code" => "EUR",
-        //                 "value" => number_format($totalAmount, 2, '.', '')
-        //             ],
-        //             "description" => "Achat de " . $validated['quantity'] . " billet(s) pour " . $event->title,
-        //         ]
-        //     ]
-        // ]);
-        
-        // if (isset($response['id']) && $response['id'] != null) {
-        //     // Redirection vers PayPal
-        //     foreach ($response['links'] as $link) {
-        //         if ($link['rel'] === 'approve') {
-        //             return redirect()->away($link['href']);
-        //         }
-        //     }
-        // }
-        
-        // return redirect()->route('events.show', $event)->with('error', 'Une erreur est survenue lors de la connexion à PayPal.');
-    }
+  }      
+     
     
     public function success(Request $request)
     {
@@ -228,46 +188,97 @@ class PaymentController extends Controller
   }
 
 
-  public function createOrder(Request $request)
+  public function __construct()
   {
-      $clientId = env('PAYPAL_CLIENT_ID');
-      $secret = env('PAYPAL_CLIENT_SECRET');
-      $mode = env('PAYPAL_MODE', 'sandbox');
+      $this->paypalClientId = config('services.paypal.client_id');
+      $this->paypalSecret = config('services.paypal.secret');
+      $this->baseUrl = 'https://api-m.sandbox.paypal.com'; // pour sandbox
+  }
 
-      $baseUrl = $mode === 'live'
-          ? 'https://api-m.paypal.com'
-          : 'https://api-m.sandbox.paypal.com';
-
-      // 1. Récupérer un access token
-      $authResponse = Http::withBasicAuth($clientId, $secret)
+  private function getAccessToken()
+  {
+      $response = Http::withBasicAuth($this->paypalClientId, $this->paypalSecret)
           ->asForm()
-          ->post("$baseUrl/v1/oauth2/token", [
-              'grant_type' => 'client_credentials'
+          ->post("{$this->baseUrl}/v1/oauth2/token", [
+              'grant_type' => 'client_credentials',
           ]);
 
-      if (!$authResponse->ok()) {
+      if ($response->failed()) {
+          Log::error('Échec de génération du token PayPal', ['body' => $response->body()]);
           return response()->json(['error' => 'Erreur d\'authentification PayPal'], 500);
       }
 
-      $accessToken = $authResponse->json()['access_token'];
+      return $response->json()['access_token'];
+  }
 
-      // 2. Créer une commande
-      $orderResponse = Http::withToken($accessToken)
-          ->post("$baseUrl/v2/checkout/orders", [
+  public function createOrder(Request $request)
+  {
+      $accessToken = $this->getAccessToken();
+
+      $response = Http::withToken($accessToken)
+          ->post("{$this->baseUrl}/v2/checkout/orders", [
               'intent' => 'CAPTURE',
               'purchase_units' => [[
                   'amount' => [
                       'currency_code' => 'EUR',
-                      'value' => '10.00'
-                  ]
-              ]]
+                      'value' => '10.00',
+                      'breakdown' => [
+                          'item_total' => [
+                              'currency_code' => 'EUR',
+                              'value' => '10.00',
+                          ]
+                      ],
+                  ],
+                  'items' => [[
+                      'name' => 'T-Shirt',
+                      'description' => 'Super Fresh Shirt',
+                      'sku' => 'sku01',
+                      'unit_amount' => [
+                          'currency_code' => 'EUR',
+                          'value' => '10.00',
+                      ],
+                      'quantity' => '1',
+                      'category' => 'PHYSICAL_GOODS',
+                  ]]
+              ]],
+              'application_context' => [
+                  'return_url' => url('/paypal/return'),
+                  'cancel_url' => url('/paypal/cancel'),
+                  'brand_name' => 'TicketHub',
+                  'landing_page' => 'BILLING',
+                  'user_action' => 'PAY_NOW',
+              ]
           ]);
 
-      if (!$orderResponse->ok()) {
-          return response()->json(['error' => 'Erreur lors de la création de la commande'], 500);
+      if ($response->failed()) {
+          Log::error('Erreur lors de la création de la commande PayPal', ['body' => $response->body()]);
+          return response()->json(['error' => 'Erreur PayPal'], 500);
       }
 
-      return response()->json($orderResponse->json());
-   }
+      return response()->json($response->json());
+  }
 
+  public function captureOrder($orderId)
+  {
+
+    $orderID = $request->input('orderID');
+
+    if (!$orderID) {
+        return response()->json(['error' => 'ID de commande manquant'], 400);
+    }
+      $accessToken = $this->getAccessToken();
+
+      $response = Http::withToken($accessToken)
+          ->post("{$this->baseUrl}/v2/checkout/orders/{$orderId}/capture");
+
+      if ($response->failed()) {
+          Log::error("Erreur lors de la capture de la commande PayPal: {$orderId}", ['body' => $response->body()]);
+          return response()->json(['error' => 'Erreur lors de la capture'], 500);
+      }
+
+      return response()->json($response->json());
+  }
 }
+
+  
+

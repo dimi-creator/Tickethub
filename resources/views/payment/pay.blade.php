@@ -23,7 +23,9 @@
                 </div>
 
                 <!-- Intégration bouton PayPal -->
-                <div id="paypal-button-container"></div>
+                <div id="paypal-button-container" class="mb-3"></div>
+                <!-- <div id="card-button-container" class="mb-3"></div> -->
+
             @else
                 <div class="alert alert-warning">
                     Aucune donnée de commande trouvée.
@@ -34,42 +36,50 @@
 </div>
 
 <!-- Script SDK PayPal -->
-<script src="https://www.paypal.com/sdk/js?client-id=ATzdNnpCOF4u6_B4dUDQrUmBtdC_os0gd0oFJAXiHVNg9Id7fqYCtZgxqz45m9gboFZjIob77AN3Nd6r&currency=EUR"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=AdPdpfFkEh6GE6I2Xo8B-0dc1kGVPfScSQa24cdOD1GxpAXqcgTTK51WO5mJeCa-tvab0a5eiEWOagL7&currency=EUR"></script>
+
+
+ 
 
 <script>
-paypal.Buttons({
-    createOrder: function(data, actions) {
-        return fetch('/paypal/order', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            },
-            body: JSON.stringify({
-                event_id: "{{ $ticket['event_id'] }}",
-                quantity: "{{ $ticket['quantity'] }}",
-                attendee_name: "{{ $ticket['attendee_name'] }}",
-                attendee_email: "{{ $ticket['attendee_email'] }}",
-                attendee_phone: "{{ $ticket['attendee_phone'] }}"
-            })
-        }).then(function(res) {
-            return res.json();
-        }).then(function(orderData) {
-            return orderData.id; // ID de l'ordre PayPal
-        });
-    },
-    onApprove: function(data, actions) {
-        return fetch("{{ route('payment.success') }}?token=" + data.orderID)
-            .then(function(res) {
-                return res.json();
-            })
-            .then(function(details) {
-                window.location.href = "{{ route('tickets.confirmation') }}";
-            });
-    },
-    onCancel: function (data) {
-        window.location.href = "{{ route('payment.cancel') }}";
-    }
-}).render('#paypal-button-container');
+ paypal.Buttons({
+        createOrder: function(data, actions) {
+            return fetch("{{ route('paypal.create-order') }}", {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            }).then(res => res.json())
+              .then(data => {
+                  if (!data.id) throw new Error("Order ID manquant");
+                  return data.id;
+              });
+        },
+        onApprove: function(data, actions) {
+            return fetch("{{ route('paypal.capture-order') }}", {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    orderID: data.orderID
+                })
+            }).then(res => res.json())
+              .then(details => {
+                  alert("Paiement effectué avec succès !");
+                  window.location.href = "{{ route('tickets.confirmation') }}";
+              });
+        },
+        
+        onCancel: function (data) {
+            alert('Paiement annulé.');
+        },
+        onError: function(err) {
+            console.error(err);
+            alert('Erreur lors du traitement du paiement: ' + err);
+        }
+    }).render('#paypal-button-container');
 </script>
 @endsection

@@ -10,12 +10,12 @@
                 <h1 class="display-4 fw-bold">Trouvez et créez des événements incroyables</h1>
                 <p class="lead">TicketHub est la plateforme idéale pour découvrir des événements près de chez vous ou pour organiser vos propres événements et vendre des billets.</p>
                 <div class="mt-4">
-                    <a href="{{ route('events.index') }}" class="btn btn-light btn-lg me-2">Parcourir les événements</a>
+                    <a href="{{ route('events.index') }}" class="btn btn-light btn-lg me-2 rounded-pill">Parcourir les événements</a>
                     @guest
-                        <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg">Créer un compte</a>
+                        <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg rounded-pill">Créer un compte</a>
                     @else
                         @if(Auth::user()->isOrganizer())
-                            <a href="{{ route('events.create') }}" class="btn btn-outline-light btn-lg">Créer un événement</a>
+                            <a href="{{ route('events.create') }}" class="btn btn-outline-light btn-lg rounded-pill">Créer un événement</a>
                         @else
                             <a href="{{ route('organizer.create') }}" class="btn btn-outline-light btn-lg">Devenir organisateur</a>
                         @endif
@@ -23,7 +23,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <img src="{{ asset('images/hero-image.jpg') }}" alt="Événements" class="img-fluid rounded">
+                <!-- <img src="{{ asset('images/hero-image.jpg') }}" alt="Événements" class="img-fluid rounded"> -->
             </div>
         </div>
     </div>

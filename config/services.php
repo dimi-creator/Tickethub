@@ -38,9 +38,9 @@ return [
     'mode'    => env('PAYPAL_MODE', 'sandbox'),
 
     'sandbox' => [
-        'client_id' => env('ATzdNnpCOF4u6_B4dUDQrUmBtdC_os0gd0oFJAXiHVNg9Id7fqYCtZgxqz45m9gboFZjIob77AN3Nd6r'),
-        'client_secret' => env('EKLQTwzXW3Z5SRSqmes447UCR4WQd4tHSm_KdhHeNLvEc7oCZPP6jMLC2ZaXpi1EBKvzYUHeiFIV2jtA
-'),
+        'client_id' => env('AdPdpfFkEh6GE6I2Xo8B-0dc1kGVPfScSQa24cdOD1GxpAXqcgTTK51WO5mJeCa-tvab0a5eiEWOagL7'),
+        'client_secret' => env('EK67tcsNQ9dDTteqYpyQlEy5Ni0ocddCwJPVSyykPabDL0kOq9357fp_Olatpo1_HOmBlxB8EEnbzqc9'),
+
     ],
 
     'live' => [
@@ -55,13 +55,8 @@ return [
 
     'paypal' => [
     'client_id' => env('PAYPAL_CLIENT_ID'),
-    'secret' => env('PAYPAL_SECRET'),
-    'mode' => env('PAYPAL_MODE', 'sandbox'),
-    'redirect_url' => [
-        'success' => env('PAYPAL_SUCCESS_URL'),
-        'cancel' => env('PAYPAL_CANCEL_URL'),
-    ],
- ],
-
+    'secret' => env('PAYPAL_CLIENT_SECRET'),
+],
+    
 
 ];
