@@ -4,12 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Ticket;
+
 use App\Models\Transaction;
+use App\Mail\TicketConfirmation;
 use App\Mail\TicketMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
+use PDF;
 
 
 class PaymentController extends Controller
@@ -17,76 +28,56 @@ class PaymentController extends Controller
 
 {
         
-
-    public function process(Request $request)
+    public function createOrder(Request $request)
     {
-        if ($request->expectsJson()) {
-            // Générer et retourner l'order ID JSON pour PayPal SDK
-            $provider = new PayPalClient;
-            $provider->setApiCredentials(config('paypal'));
-            $provider->getAccessToken();
-        
-            $totalAmount = session('ticket_data.amount') ?? 0;
-        
-            $response = $provider->createOrder([
-                "intent" => "CAPTURE",
-                "application_context" => [
-                    "return_url" => route('payment.success'),
-                    "cancel_url" => route('payment.cancel'),
-                ],
-                "purchase_units" => [
-                    [
-                        "amount" => [
-                            "currency_code" => "EUR",
-                            "value" => number_format($totalAmount, 2, '.', '')
-                        ],
-                        "description" => "Paiement billet",
-                    ]
-                ]
-            ]);
-        
-            if (!empty($response['id'])) {
-                return response()->json(['id' => $response['id']]);
-            }
-        
-            return response()->json(['error' => 'Erreur PayPal'], 500);
-        }
-
-        $validated = $request->validate([
+        $request->validate([
             'event_id' => 'required|exists:events,id',
             'quantity' => 'required|integer|min:1',
             'attendee_name' => 'required|string|max:255',
-            'attendee_email' => 'required|email|max:255',
-            'attendee_phone' => 'required|string|max:20',
+            'attendee_email' => 'required|email',
+            'attendee_phone' => 'required|string',
         ]);
-        
-        $event = Event::findOrFail($validated['event_id']);
-        
-        // Vérifier la disponibilité des billets
-        if ($event->available_tickets < $validated['quantity']) {
-            return back()->with('error', 'Désolé, il ne reste pas assez de billets disponibles.');
-        }
-        
-        // Calcul du montant total
-        $totalAmount = $event->price * $validated['quantity'];
-        
-        // Stockage temporaire des infos dans la session
-        session([
-            'ticket_data' => [
-                'event_id' => $event->id,
-                'quantity' => $validated['quantity'],
-                'attendee_name' => $validated['attendee_name'],
-                'attendee_email' => $validated['attendee_email'],
-                'attendee_phone' => $validated['attendee_phone'],
-                'amount' => $totalAmount,
+
+        $event = Event::findOrFail($request->event_id);
+
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $token = $provider->getAccessToken();
+        $provider->setAccessToken($token);
+
+        $totalPrice = $event->price * $request->quantity;
+
+        $order = $provider->createOrder([
+            "intent" => "CAPTURE",
+            "purchase_units" => [[
+                "amount" => [
+                    "currency_code" => "EUR",
+                    "value" => number_format($totalPrice, 2, '.', ''),
+                ]
+            ]],
+            "application_context" => [
+                "return_url" => route('paypal.capture-order'),
+                "cancel_url" => route('paypal.cancel'),
             ]
         ]);
 
-        return redirect()->route('payments.pay');
-  }      
-     
-    
-    public function success(Request $request)
+        session([
+            'purchase_data' => $request->all(),
+            'paypal_order_id' => $order['id'],
+        ]);
+
+        foreach ($order['links'] as $link) {
+            if ($link['rel'] === 'approve') {
+                return redirect()->away($link['href']);
+            }
+        }
+
+        return redirect()->back()->with('error', 'Une erreur est survenue avec PayPal.');
+     }
+
+
+
+       public function success(Request $request)
     {
         // Vérifier que les données sont dans la session
         if (!session()->has('ticket_data')) {
@@ -101,7 +92,7 @@ class PaymentController extends Controller
         $provider->setApiCredentials(config('paypal'));
         $provider->getAccessToken();
         
-        $response = $provider->capturePaymentOrder($request->token);
+        $response = $provider->captureOrder($request->token);
         
         if (isset($response['status']) && $response['status'] === 'COMPLETED') {
             // Création de la transaction
@@ -119,7 +110,7 @@ class PaymentController extends Controller
             $tickets = [];
             for ($i = 0; $i < $ticketData['quantity']; $i++) {
                 $ticket = Ticket::create([
-                    'ticket_number' => 'TIX-' . uniqid(),
+                    'ticket_number' => 'TCK-' . strtoupper(Str::random(10)),
                     'event_id' => $event->id,
                     'user_id' => auth()->id(),
                     'attendee_name' => $ticketData['attendee_name'],
@@ -131,6 +122,16 @@ class PaymentController extends Controller
                 
                 $tickets[] = $ticket;
             }
+
+
+             // Récupérer les données de paiement
+               $paymentData = $request->all();
+
+              // Définir la valeur de transaction_id dans la session
+                 session()->flash('transaction_id', $paymentData['transactionId']);
+                 session()->flash('attendee_email', $ticketData['attendee_email']);
+                 session()->flash('orderID', $ticketData['orderID']);
+
             
             // Mise à jour du nombre de billets disponibles
             $event->available_tickets -= $ticketData['quantity'];
@@ -142,7 +143,11 @@ class PaymentController extends Controller
             // Nettoyage de la session
             session()->forget('ticket_data');
             
-            return redirect()->route('tickets.confirmation')->with('transaction_id', $transaction->id);
+            return redirect()->route('tickets.confirmation')->with([
+                'success' => 'Le paiement a été complété.',
+                'transaction_id' => $transaction->id,
+                  
+           ]);
         }
         
         return redirect()->route('events.show', $event)->with('error', 'Le paiement n\'a pas été complété.');
@@ -169,6 +174,7 @@ class PaymentController extends Controller
        }
 
        $ticketData = session('ticket_data');
+       
 
        return view('payment.pay', compact('ticketData'));
    }
@@ -176,16 +182,18 @@ class PaymentController extends Controller
 
 
     public function show()
-  {
-    if (!session()->has('ticket_data')) {
-        return redirect()->route('home')->with('error', 'Aucune information de commande trouvée.');
+{
+    $transactionId = session('transaction_id');
+
+    if (!$transactionId) {
+        return redirect()->route('home')->with('error', 'Aucune transaction trouvée.');
     }
 
-    $ticketData = session('ticket_data');
-    $event = \App\Models\Event::findOrFail($ticketData['event_id']);
+    $transaction = Transaction::with(['tickets.event'])->findOrFail($transactionId);
 
-    return view('payment.show', compact('ticketData', 'event'));
-  }
+    return view('tickets.confirmation', compact('transaction'));
+}
+
 
 
   public function __construct()
@@ -211,74 +219,87 @@ class PaymentController extends Controller
       return $response->json()['access_token'];
   }
 
-  public function createOrder(Request $request)
-  {
-      $accessToken = $this->getAccessToken();
+  
 
-      $response = Http::withToken($accessToken)
-          ->post("{$this->baseUrl}/v2/checkout/orders", [
-              'intent' => 'CAPTURE',
-              'purchase_units' => [[
-                  'amount' => [
-                      'currency_code' => 'EUR',
-                      'value' => '10.00',
-                      'breakdown' => [
-                          'item_total' => [
-                              'currency_code' => 'EUR',
-                              'value' => '10.00',
-                          ]
-                      ],
-                  ],
-                  'items' => [[
-                      'name' => 'T-Shirt',
-                      'description' => 'Super Fresh Shirt',
-                      'sku' => 'sku01',
-                      'unit_amount' => [
-                          'currency_code' => 'EUR',
-                          'value' => '10.00',
-                      ],
-                      'quantity' => '1',
-                      'category' => 'PHYSICAL_GOODS',
-                  ]]
-              ]],
-              'application_context' => [
-                  'return_url' => url('/paypal/return'),
-                  'cancel_url' => url('/paypal/cancel'),
-                  'brand_name' => 'TicketHub',
-                  'landing_page' => 'BILLING',
-                  'user_action' => 'PAY_NOW',
-              ]
-          ]);
 
-      if ($response->failed()) {
-          Log::error('Erreur lors de la création de la commande PayPal', ['body' => $response->body()]);
-          return response()->json(['error' => 'Erreur PayPal'], 500);
-      }
 
-      return response()->json($response->json());
-  }
+  
 
-  public function captureOrder($orderId)
-  {
 
-    $orderID = $request->input('orderID');
 
-    if (!$orderID) {
-        return response()->json(['error' => 'ID de commande manquant'], 400);
+   public function captureOrder(Request $request)
+    {
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $token = $provider->getAccessToken();
+        $provider->setAccessToken($token);
+
+        $orderId = session('paypal_order_id');
+
+        $result = $provider->capturePaymentOrder($orderId);
+         
+        // dd($result);
+
+        if ($result['status'] !== 'COMPLETED')
+        {
+            return redirect()->route('home')->with('error', 'Le paiement a échoué.');
+        }
+
+        $data = session('purchase_data');
+        $event = Event::findOrFail($data['event_id']);
+
+        // Créer le(s) billet(s)
+        $tickets = [];
+        for ($i = 0; $i < $data['quantity']; $i++) {
+            $ticket = Ticket::create([
+                'event_id' => $event->id,
+                'user_id' => Auth::id(),
+                'attendee_name' => $data['attendee_name'],
+                'attendee_email' => $data['attendee_email'],
+                'attendee_phone' => $data['attendee_phone'],
+                'status' => 'paid',
+                'ticket_number' => 'TCK-' . strtoupper(Str::random(10)),
+                // 'pdf_path' => à générer si tu veux
+            ]);
+            $tickets[] = $ticket;
+        }
+
+        // Envoi de l'email avec le ticket
+        foreach ($tickets as $ticket) {
+            Mail::to($ticket->attendee_email)->send(new TicketMail($ticket));
+        }
+
+        return redirect()->route('home')->with('success', 'Paiement réussi. Vos billets ont été envoyés par email.');
     }
-      $accessToken = $this->getAccessToken();
 
-      $response = Http::withToken($accessToken)
-          ->post("{$this->baseUrl}/v2/checkout/orders/{$orderId}/capture");
 
-      if ($response->failed()) {
-          Log::error("Erreur lors de la capture de la commande PayPal: {$orderId}", ['body' => $response->body()]);
-          return response()->json(['error' => 'Erreur lors de la capture'], 500);
-      }
 
-      return response()->json($response->json());
+     public function confirmation()
+  {
+    $transactionId = session('transaction_id');
+
+    if (!$transactionId) {
+        return redirect()->route('home')->with('error', 'Aucune transaction trouvée.');
+    }
+
+    $transaction = Transaction::with('tickets.event')->findOrFail($transactionId);
+    $event = $transaction->event;
+    $quantity = $transaction->tickets->count();
+    $ticketCount = $transaction->tickets->count();
+
+    return view('tickets.confirmation', compact('transaction', 'event', 'quantity', 'ticketCount'));
   }
+    
 }
+
+
+
+
+  
+
+ 
+
+
 
   
 

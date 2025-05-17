@@ -118,7 +118,7 @@
                     <h5 class="modal-title" id="ticketModalLabel">Acheter un billet pour {{ $event->title }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
-                <form action="{{ route('payment.process') }}" method="POST">
+                <form action="{{ route('paypal.create-order') }}" method="POST">
                     @csrf
                     <input type="hidden" name="event_id" value="{{ $event->id }}">
                     

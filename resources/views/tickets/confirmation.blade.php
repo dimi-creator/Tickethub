@@ -14,11 +14,11 @@
                     
                     <h1 class="card-title mb-4">Merci pour votre achat !</h1>
                     
-                    <p class="lead mb-4">Vos billets pour <strong>{{ $transaction->event->title }}</strong> ont été réservés avec succès.</p>
+                    <p class="lead mb-4"> billet(s) pour <strong>{{ $event->title }}</strong>  réservé(s) avec succès. </p>
                     
                     <div class="alert alert-info mb-4">
                         <p class="mb-1">Un email contenant vos billets a été envoyé à l'adresse: <strong>{{ session('attendee_email') ?? auth()->user()->email }}</strong></p>
-                        <p class="mb-0">Numéro de transaction: <strong>{{ $transaction->payment_id }}</strong></p>
+                        <p class="mb-0">Numéro de transaction: <strong>{{ session('orderID') }}</strong></p>
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-center">

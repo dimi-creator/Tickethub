@@ -17,7 +17,7 @@
                         @if(Auth::user()->isOrganizer())
                             <a href="{{ route('events.create') }}" class="btn btn-outline-light btn-lg rounded-pill">Créer un événement</a>
                         @else
-                            <a href="{{ route('organizer.create') }}" class="btn btn-outline-light btn-lg">Devenir organisateur</a>
+                            <a href="{{ route('organizer.create') }}" class="btn btn-outline-light btn-lg rounded-pill">Devenir organisateur</a>
                         @endif
                     @endguest
                 </div>

@@ -42,43 +42,46 @@
  
 
 <script>
- paypal.Buttons({
+    paypal.Buttons({
         createOrder: function(data, actions) {
-            return fetch("{{ route('paypal.create-order') }}", {
+            return fetch('{{ route('paypal.create-order') }}', {
                 method: 'POST',
                 headers: {
-                    'content-type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            }).then(res => res.json())
-              .then(data => {
-                  if (!data.id) throw new Error("Order ID manquant");
-                  return data.id;
-              });
-        },
-        onApprove: function(data, actions) {
-            return fetch("{{ route('paypal.capture-order') }}", {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({
-                    orderID: data.orderID
+                    event_id: '{{ $ticket['event_id'] }}',
+                    quantity: '{{ $ticket['quantity'] }}',
+                    attendee_name: '{{ $ticket['attendee_name'] }}',
+                    attendee_email: '{{ $ticket['attendee_email'] }}',
+                    attendee_phone: '{{ $ticket['attendee_phone'] }}',
+                    amount: '{{ $ticket['amount'] }}',
                 })
-            }).then(res => res.json())
-              .then(details => {
-                  alert("Paiement effectué avec succès !");
-                  window.location.href = "{{ route('tickets.confirmation') }}";
-              });
+            })
+             .then(res => res.json())
+             .then(data => data.id);
         },
+        onApprove: function(data, actions) {
+            return fetch('{{ route('paypal.capture-order') }}' , {
+               method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+             },
+             body: JSON.stringify({
+            orderID: data.orderID
+              })
         
-        onCancel: function (data) {
-            alert('Paiement annulé.');
-        },
-        onError: function(err) {
-            console.error(err);
-            alert('Erreur lors du traitement du paiement: ' + err);
+            })
+            .then(res => res.json())
+             .then(details => {
+                alert('Transaction complétée avec succès');
+                // Rediriger ou mettre à jour l'interface utilisateur selon les besoins
+                window.location.href = '{{ route('ticket.confirmation') }}';
+            });
         }
     }).render('#paypal-button-container');
 </script>

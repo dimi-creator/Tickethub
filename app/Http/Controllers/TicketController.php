@@ -7,6 +7,12 @@ use App\Models\Ticket;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketMail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Redirect;
 
 class TicketController extends Controller
 {
@@ -43,7 +49,7 @@ class TicketController extends Controller
         
         // Enregistrer les infos de transaction en session pour le paiement
         session([
-            'transaction_id' => $transaction->id,
+            'orderID' => $transaction->id,
             'event_id' => $event->id,
             'quantity' => $validated['quantity'],
             'attendee_name' => $validated['attendee_name'],
@@ -56,11 +62,77 @@ class TicketController extends Controller
         return redirect()->route('payment.show');
     }
     
-    public function confirmation()
-    {
-        // Cette méthode sera utilisée après un paiement réussi
-        $transaction = Transaction::with(['event', 'user'])->findOrFail(session('transaction_id'));
-        
-        return view('tickets.confirmation', compact('transaction'));
+   public function show()
+  {
+    $transactionId = session('transaction_id');
+
+    if (!$transactionId) {
+        return redirect()->route('home')->with('error', 'Aucune transaction trouvée.');
     }
-}
+
+    $transaction = Transaction::with(['tickets.event'])->findOrFail($transactionId);
+
+    return view('tickets.confirmation', compact('transaction'));
+  }
+
+
+    public function sendTickets(Request $request)
+    {
+        // Récupérer l'orderID depuis la session
+        $orderID = session('orderID');
+
+        // Vérifier si l'orderID existe dans la session
+        if (!$orderID) {
+            return redirect()->route('home')->with('error', 'Aucune transaction trouvée.');
+        }
+
+        try {
+            // Récupérer la transaction avec ses relations
+            $transaction = Transaction::with(['event', 'user'])
+                ->where('payment_id', $orderID)
+                ->where('user_id', auth()->id()) // Vérifier que la transaction appartient à l'utilisateur
+                ->firstOrFail();
+
+            // Créer les billets pour la transaction
+            for ($i = 0; $i < $transaction->quantity; $i++) {
+                Ticket::create([
+                    'transaction_id' => $transaction->id,
+                    'event_id' => $transaction->event_id,
+                    'attendee_name' => $transaction->attendee_name,
+                    'attendee_email' => $transaction->attendee_email,
+                    'attendee_phone' => $transaction->attendee_phone,
+                    'ticket_code' => Str::random(10), // Générer un code de billet aléatoire
+                ]);
+            }
+
+            // Envoyer les billets par email
+            Mail::to($transaction->user->email)->send(new TicketMail($transaction));
+
+            // Retourner une réponse de succès
+            return redirect()->route('home')->with('success', 'Les billets ont été envoyés par email.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Gérer le cas où la transaction n'est pas trouvée
+            return redirect()->route('home')->with('error', 'Transaction introuvable.');
+        }
+    }
+
+    
+
+public function confirmation()
+  {
+    $transactionId = session('transaction_id');
+
+    if (!$transactionId) {
+        return redirect()->route('home')->with('error', 'Aucune transaction trouvée.');
+    }
+
+    $transaction = Transaction::with('tickets.event')->findOrFail($transactionId);
+    $event = $transaction->tickets->first()->event; // Récupérer l'événement associé au premier billet
+    $ticketCount = $transaction->tickets->count(); // Compter le nombre de billets
+    $quantity = session('quantity', 1); // Récupérer la quantité depuis la session
+
+    return view('tickets.confirmation', compact('transaction', 'event', 'quantity', 'ticketCount'));
+ }
+
+}   
+    

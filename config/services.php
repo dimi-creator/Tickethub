@@ -38,25 +38,21 @@ return [
     'mode'    => env('PAYPAL_MODE', 'sandbox'),
 
     'sandbox' => [
-        'client_id' => env('AdPdpfFkEh6GE6I2Xo8B-0dc1kGVPfScSQa24cdOD1GxpAXqcgTTK51WO5mJeCa-tvab0a5eiEWOagL7'),
-        'client_secret' => env('EK67tcsNQ9dDTteqYpyQlEy5Ni0ocddCwJPVSyykPabDL0kOq9357fp_Olatpo1_HOmBlxB8EEnbzqc9'),
-
+        'client_id'         => env('PAYPAL_SANDBOX_CLIENT_ID', ''),
+        'client_secret'     => env('PAYPAL_SANDBOX_CLIENT_SECRET', ''),
+        
     ],
 
     'live' => [
-        'client_id' => env('PAYPAL_LIVE_CLIENT_ID'),
-        'client_secret' => env('PAYPAL_LIVE_CLIENT_SECRET'),
+        'client_id'         => env('PAYPAL_LIVE_CLIENT_ID', ''),
+        'client_secret'     => env('PAYPAL_LIVE_CLIENT_SECRET', ''),
+        'app_id'            => env('PAYPAL_LIVE_APP_ID', ''),
     ],
 
     'payment_action' => 'Sale',
-    'currency'       => 'EUR',
+    'currency'       => env('PAYPAL_CURRENCY', 'EUR'),
     'notify_url'     => '',
     'locale'         => 'fr_FR',
-
-    'paypal' => [
-    'client_id' => env('PAYPAL_CLIENT_ID'),
-    'secret' => env('PAYPAL_CLIENT_SECRET'),
-],
-    
-
+    'validate_ssl'   => true,
 ];
+    

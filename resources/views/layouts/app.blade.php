@@ -56,7 +56,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('dashboard') }}">
+                                        <a class="dropdown-item" href="{{ route('dashboard.organizer') }}">        
                                             <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
                                         </a>
                                     </li>

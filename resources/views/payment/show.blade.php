@@ -1,4 +1,4 @@
-@extends('layouts.app')
+<!-- @extends('layouts.app')
 
 @section('title', 'Paiement')
 
@@ -31,7 +31,7 @@
                     </ul>
                     
                     <div class="tab-content p-4 border border-top-0 rounded-bottom mb-4" id="paymentTabsContent">
-                        <!-- Onglet Carte de crédit -->
+                        Onglet Carte de crédit
                         <div class="tab-pane fade show active" id="card-content" role="tabpanel" aria-labelledby="card-tab">
                             <form action="{{ route('payment.process.credit-card') }}" method="POST" id="credit-card-form">
                                 @csrf
@@ -82,7 +82,7 @@
                             </form>
                         </div>
                         
-                        <!-- Onglet PayPal -->
+                        Onglet PayPal
                         <div class="tab-pane fade" id="paypal-content" role="tabpanel" aria-labelledby="paypal-tab">
                             <div class="text-center py-4">
                                 <p>Vous allez être redirigé vers PayPal pour finaliser votre paiement en toute sécurité.</p>
@@ -104,4 +104,4 @@
         </div>
     </div>
 </div>
-@endsection
+@endsection -->

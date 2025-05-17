@@ -25,11 +25,11 @@ class TicketMail extends Mailable
      * @param Event $event
      * @return void
      */
-    public function __construct(array $tickets, Event $event)
+    public function __construct(Ticket $ticket)
     {
         
-        $this->tickets = $tickets;
-        $this->event = $event;
+        $this->tickets = $ticket;
+        $this->event = $ticket->event;
     }
 
     /**
@@ -40,8 +40,8 @@ class TicketMail extends Mailable
 
      public function build()
     {
-        return $this->subject('Vos billets pour ' . $this->event->title)
-                    ->view('emails.tickets');
+        return $this->subject(' billet(s) pour ' . $this->event->title)
+                    ->view('ticket.confirmation');
     }
     public function envelope(): Envelope
     {
@@ -56,7 +56,7 @@ class TicketMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'tickets.confirmation',
         );
     }
 

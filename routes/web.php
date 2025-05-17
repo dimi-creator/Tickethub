@@ -54,9 +54,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/confirmation', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
     
     // Paiement PayPal
-    Route::post('/paiement/process', [PaymentController::class, 'process'])->name('payment.process');
+    // Route::post('/paiement/process', [PaymentController::class, 'process'])->name('payment.process');
     Route::get('/paiement/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::get('/paiement/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+    Route::get('/paiement/cancel', [PaymentController::class, 'cancel'])->name('paypal.cancel');
     
     // Dashboard utilisateur
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -86,17 +86,17 @@ Route::middleware('auth')->group(function () {
     // Route::middleware('auth')->group(function () {
     // Achat de billets
     Route::post('/tickets/acheter', [TicketController::class, 'purchase'])->name('tickets.purchase');
-    Route::get('/tickets/confirmation', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
+    // Route::get('/tickets/confirmation/{transaction_id}', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
+    Route::get('/tickets/confirmation',  [TicketController::class, 'confirmation'])->name('ticket.confirmation');
     
     // Paiement
     // Route::get('/paiement', [PaymentController::class, 'show'])->name('payment.show');
-    Route::post('/paiement/carte', [PaymentController::class, 'processCreditCard'])->name('payment.process.credit-card');
-    Route::post('/paiement/paypal', [PaymentController::class, 'processPaypal'])->name('payment.process.paypal');
+    
+    // Route::post('/paiement/paypal', [PaymentController::class, 'processPaypal'])->name('payment.process.paypal');
     Route::get('/paiement', [PaymentController::class, 'pay'])->name('payments.pay');
     Route::post('/paypal/create-order', [PaymentController::class, 'createOrder'])->name('paypal.create-order');
-    Route::post('/paypal/capture-order', [PaymentController::class, 'captureOrder'])->name('paypal.capture-order');
-    
-
+    Route::get('/paypal/capture-order', [PaymentController::class, 'captureOrder'])->name('paypal.capture-order');
+   
 
 });
 
