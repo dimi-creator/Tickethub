@@ -4,12 +4,11 @@ namespace App\Mail;
 
 use App\Models\Event;
 use App\Models\Ticket;
+use App\Models\Transaction;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TicketMail extends Mailable
 {
@@ -17,19 +16,29 @@ class TicketMail extends Mailable
 
     public $tickets;
     public $event;
+    public $transactionId;
+    public $purchaseDate;
+    public $amount;
+    public $attendeeName;
 
     /**
      * Create a new message instance.
      *
      * @param array $tickets
      * @param Event $event
+     * @param string $transactionId
+     * @param float $amount
      * @return void
      */
-    public function __construct(Ticket $ticket)
+    public function __construct(array $tickets, Event $event, $transactionId, $amount)
     {
-        
-        $this->tickets = $ticket;
-        $this->event = $ticket->event;
+        $this->tickets = $tickets;
+        $this->event = $event;
+        $this->transactionId = $transactionId;
+
+        $this->purchaseDate = now()->format('d/m/Y H:i');
+        $this->amount = number_format($amount, 2, ',', ' ');
+        $this->attendeeName = $tickets[0]->attendee_name;
     }
 
     /**
@@ -37,36 +46,21 @@ class TicketMail extends Mailable
      *
      * @return $this
      */
+    public function build()
+    {
+        // Générer le PDF des billets
+        $pdf = PDF::loadView('pdf.tickets', [
+            'tickets' => $this->tickets,
+            'event' => $this->event,
+            'transactionId' => $this->transactionId,
+            'purchaseDate' => $this->purchaseDate,
+            'amount' => $this->amount
+        ]);
 
-     public function build()
-    {
-        return $this->subject(' billet(s) pour ' . $this->event->title)
-                    ->view('ticket.confirmation');
-    }
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject: 'Ticket Mail',
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'tickets.confirmation',
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        return $this->subject('Vos billets pour ' . $this->event->title)
+                    ->view('emails.tickets')
+                    ->attachData($pdf->output(), 'billets-' . $this->transactionId . '.pdf', [
+                        'mime' => 'application/pdf',
+                    ]);
     }
 }

@@ -5,6 +5,21 @@ use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use App\Http\Requests\StoreEventRequest;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
+use BaconQrCode\Renderer\Image\GdImageRenderer; // Backend GD
+use BaconQrCode\Writer;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
+
+
+
+
+
+
 
 
 class DashboardController extends Controller
@@ -23,12 +38,32 @@ class DashboardController extends Controller
         }
         
         // Dashboard pour utilisateurs réguliers
-        $tickets = Ticket::where('user_id', auth()->id())
+         $upcomingTickets = Ticket::where('user_id', auth()->id())
+            ->whereHas('event', function($query) {
+                $query->where('start_date', '>', now());
+            })
             ->with('event')
             ->latest()
+            ->take(5)
             ->get();
             
-        return view('dashboard.index', compact('tickets'));
+        $pastTickets = Ticket::where('user_id', auth()->id())
+            ->whereHas('event', function($query) {
+                $query->where('start_date', '<=', now());
+            })
+            ->with('event')
+            ->latest()
+            ->take(5)
+            ->get();
+            
+        $recentTransactions = Transaction::where('user_id', auth()->id())
+            ->with('event')
+            ->latest()
+            ->take(5)
+            ->get();
+            
+        return view('dashboard.index', compact('upcomingTickets', 'pastTickets', 'recentTransactions'));
+    
     }
     
     public function tickets()
@@ -41,6 +76,70 @@ class DashboardController extends Controller
         return view('dashboard.tickets', compact('tickets'));
     }
     
+
+    // Ajout d'une méthode pour afficher les transactions
+    public function transactions()
+    {
+        $transactions = Transaction::where('user_id', auth()->id())
+            ->with('event')
+            ->latest()
+            ->paginate(10);
+            
+        return view('dashboard.transactions', compact('transactions'));
+    }
+
+      // Afficher un billet spécifique avec QR code
+    public function showTicket(Ticket $ticket)
+    {
+        // Vérifier que l'utilisateur est bien propriétaire du billet
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403, 'Non autorisé');
+        }
+        
+        // Générer le QR code
+       
+           $result = Builder::create()
+        ->writer(new PngWriter())
+        ->data($ticket->ticket_number)
+        ->size(200)
+        ->margin(10)
+        ->build();
+
+        $qrCode = base64_encode($result->getString());
+        
+        return view('dashboard.ticket-details', compact('ticket', 'qrCode'));
+    }
+    
+    // Téléchargement d'un billet en PDF
+    public function downloadTicket(Ticket $ticket)
+    {
+        // Vérifier que l'utilisateur est bien propriétaire du billet
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403, 'Non autorisé');
+        }
+        
+        // Logique pour générer le PDF du billet
+          $result = Builder::create()
+        ->writer(new PngWriter())
+        ->data($ticket->ticket_number)
+        ->size(200)
+        ->margin(10)
+        ->build();
+
+        $qrCode = base64_encode($result->getString());
+        
+
+        $pdf = Pdf::loadView('pdf.tickets', [
+        'ticket' => $ticket,
+        'qrCode' => $qrCode,
+        'event' => $ticket->event,
+       ]);
+        
+       return $pdf->download('ticket-'.$ticket->ticket_number.'.pdf');
+        // return response()->download($pdfPath, 'ticket-'.$ticket->ticket_number.'.pdf');
+    }
+
+
     public function organizerDashboard()
     {
         // Vérifier si l'utilisateur est un organisateur

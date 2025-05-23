@@ -56,7 +56,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('dashboard.organizer') }}">        
+                                        <a class="dropdown-item" href="{{ route('dashboard') }}">        
                                             <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
                                         </a>
                                     </li>
@@ -67,6 +67,7 @@
                                                 <i class="fas fa-calendar-alt me-2"></i>Espace Organisateur
                                             </a>
                                         </li>
+                                       
                                     @else
                                         <li>
                                             <a class="dropdown-item" href="{{ route('organizer.create') }}">

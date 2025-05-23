@@ -124,11 +124,36 @@ return [
     ],
 
 
-    // 'providers' => [
-    // ...
-    // App\Providers\FortifyServiceProvider::class,
-    // ...
-//   ],
+   //     'providers' => [
+        
+   //     SimpleSoftwareIO\QrCode\Facades\QrCode::class,
+    
+   //   ],
 
 
+ 
+
+    'aliases' => [
+        // Autres alias...
+        'QrCode' => SimpleSoftwareIO\QrCode\Facades\QrCode::class,
+        'QrCodeGenerator' => SimpleSoftwareIO\QrCode\Generator::class,
+        'QrCodeFacade' => SimpleSoftwareIO\QrCode\Facades\QrCode::class,
+        'App' => Illuminate\Support\Facades\App::class,
+    'Arr' => Illuminate\Support\Arr::class,
+    'Artisan' => Illuminate\Support\Facades\Artisan::class,
+    'Auth' => Illuminate\Support\Facades\Auth::class,
+    'Blade' => Illuminate\Support\Facades\Blade::class,
+    'Str' => Illuminate\Support\Str::class,
+    'Broadcast' => Illuminate\Support\Facades\Broadcast::class,
+
+
+    
+    
+    
+    
+
+
+
+
+ ],
 ];

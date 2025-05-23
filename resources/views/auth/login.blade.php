@@ -50,6 +50,7 @@
                         </div>
 
                         <div class="mt-3 text-center">
+                            @php use Illuminate\Support\Facades\Route; @endphp
                             @if (Route::has('password.request'))
                                 <a href="{{ route('password.request') }}">
                                     Mot de passe oublié?

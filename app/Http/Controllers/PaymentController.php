@@ -138,7 +138,7 @@ class PaymentController extends Controller
             $event->save();
             
             // Envoi des billets par email
-            Mail::to($ticketData['attendee_email'])->send(new TicketMail($tickets, $event));
+            Mail::to($ticketData['attendee_email'])->send(new TicketMail($tickets, $event, $transaction->id, $transaction->amount));
             
             // Nettoyage de la session
             session()->forget('ticket_data');
@@ -259,14 +259,24 @@ class PaymentController extends Controller
                 'attendee_phone' => $data['attendee_phone'],
                 'status' => 'paid',
                 'ticket_number' => 'TCK-' . strtoupper(Str::random(10)),
+                'transaction_id' => $result['id'],
+
                 // 'pdf_path' => à générer si tu veux
             ]);
             $tickets[] = $ticket;
+            
+
         }
 
         // Envoi de l'email avec le ticket
         foreach ($tickets as $ticket) {
-            Mail::to($ticket->attendee_email)->send(new TicketMail($ticket));
+            Mail::to($data['attendee_email'])->send(new TicketMail(
+              $tickets, 
+               $event, 
+               $result['id'],
+
+                $amount = $event->price * $data['quantity']
+         ));
         }
 
         return redirect()->route('home')->with('success', 'Paiement réussi. Vos billets ont été envoyés par email.');

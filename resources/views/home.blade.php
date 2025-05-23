@@ -56,7 +56,7 @@
                                 <p class="card-text text-muted">
                                     <i class="fas fa-calendar-alt me-1"></i> {{ $event->start_date->format('d/m/Y H:i') }}
                                 </p>
-                                <p class="card-text">{{ Str::limit($event->description, 100) }}</p>
+                                <p class="card-text">{{ \illuminate\Support\Str::limit($event->description, 100) }}</p>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="text-primary fw-bold">{{ number_format($event->price, 2, ',', ' ') }} fcfa</span>
                                     <a href="{{ route('events.show', $event) }}" class="btn btn-outline-primary">Voir détails</a>
