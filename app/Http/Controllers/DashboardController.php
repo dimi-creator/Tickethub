@@ -4,16 +4,15 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\Transaction;
+use App\Models\Organizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
-use App\Http\Requests\StoreEventRequest;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
-use BaconQrCode\Renderer\Image\GdImageRenderer; // Backend GD
-use BaconQrCode\Writer;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Exceptions\ResponseException;
 
 
 
@@ -36,9 +35,9 @@ class DashboardController extends Controller
         if (auth()->user()->isOrganizer()) {
             return redirect()->route('dashboard.organizer');
         }
-        
+
         // Dashboard pour utilisateurs réguliers
-         $upcomingTickets = Ticket::where('user_id', auth()->id())
+        $upcomingTickets = Ticket::where('user_id', auth()->id())
             ->whereHas('event', function($query) {
                 $query->where('start_date', '>', now());
             })
@@ -46,7 +45,7 @@ class DashboardController extends Controller
             ->latest()
             ->take(5)
             ->get();
-            
+        
         $pastTickets = Ticket::where('user_id', auth()->id())
             ->whereHas('event', function($query) {
                 $query->where('start_date', '<=', now());
@@ -55,7 +54,7 @@ class DashboardController extends Controller
             ->latest()
             ->take(5)
             ->get();
-            
+        
         $recentTransactions = Transaction::where('user_id', auth()->id())
             ->with('event')
             ->latest()
@@ -63,7 +62,6 @@ class DashboardController extends Controller
             ->get();
             
         return view('dashboard.index', compact('upcomingTickets', 'pastTickets', 'recentTransactions'));
-    
     }
     
     public function tickets()
@@ -97,15 +95,7 @@ class DashboardController extends Controller
         }
         
         // Générer le QR code
-       
-           $result = Builder::create()
-        ->writer(new PngWriter())
-        ->data($ticket->ticket_number)
-        ->size(200)
-        ->margin(10)
-        ->build();
-
-        $qrCode = base64_encode($result->getString());
+        $qrCode = $this->generateQrCode($ticket->ticket_number);
         
         return view('dashboard.ticket-details', compact('ticket', 'qrCode'));
     }
@@ -118,25 +108,47 @@ class DashboardController extends Controller
             abort(403, 'Non autorisé');
         }
         
-        // Logique pour générer le PDF du billet
-          $result = Builder::create()
-        ->writer(new PngWriter())
-        ->data($ticket->ticket_number)
-        ->size(200)
-        ->margin(10)
-        ->build();
-
-        $qrCode = base64_encode($result->getString());
-        
+        // Générer le QR code
+        $qrCode = $this->generateQrCode($ticket->ticket_number);
 
         $pdf = Pdf::loadView('pdf.tickets', [
         'ticket' => $ticket,
         'qrCode' => $qrCode,
         'event' => $ticket->event,
+        'transactionId' => $ticket->transaction ? $ticket->transaction->id : '---',
+        'purchaseDate' => $ticket->created_at->format('d/m/Y') ?? now()->format('d/m/Y'),
+        'amount' => $ticket->transaction ? $ticket->transaction->amount : '---',
+        
+
+
        ]);
         
        return $pdf->download('ticket-'.$ticket->ticket_number.'.pdf');
         // return response()->download($pdfPath, 'ticket-'.$ticket->ticket_number.'.pdf');
+    }
+
+
+    /**
+     * Génère un QR code pour un texte donné
+     *
+     * @param string $text Texte à encoder dans le QR code
+     * @return string QR code encodé en base64
+     */
+    private function generateQrCode(string $text): string
+    {
+        try {
+            $result = Builder::create()
+                ->writer(new PngWriter())
+                ->data($text)
+                ->size(200)
+                ->margin(10)
+                ->build();
+
+            return $result->getDataUri();
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la génération du QR code: ' . $e->getMessage());
+            throw new ResponseException('Erreur lors de la génération du QR code', 500);
+        }
     }
 
 

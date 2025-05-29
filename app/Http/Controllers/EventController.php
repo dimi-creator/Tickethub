@@ -6,6 +6,16 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\EventController;
+use Illuminate\Support\Facades\Auth;
+use App\Models\TicketType;
+use App\Models\Ticket;
+use App\Models\Organizer;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketMail;
+use App\Mail\TicketsMail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Redirect;
 
 class EventController extends Controller
 {
@@ -55,28 +65,57 @@ class EventController extends Controller
         }
         
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'venue' => 'required|string',
-            'start_date' => 'required|date|after:now',
-            'end_date' => 'required|date|after:start_date',
-            'total_tickets' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|max:2048',
-            'status' => 'required|in:draft,published',
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'venue' => 'required|string',
+        'start_date' => 'required|date|after:now',
+        'end_date' => 'required|date|after:start_date',
+        'image' => 'nullable|image|max:2048',
+        'status' => 'required|in:draft,published',
+        'ticket_types' => 'required|array|min:1',
+        'ticket_types.*.name' => 'required|string|max:255',
+        'ticket_types.*.price' => 'required|numeric|min:0',
+        'ticket_types.*.total_quantity' => 'required|integer|min:1',
+        'ticket_types.*.description' => 'nullable|string|max:500',
+        'ticket_types.*.sort_order' => 'integer',
+     ]);
+    
+     if ($request->hasFile('image')) {
+        $path = $request->file('image')->store('events', 'public');
+        $validated['image'] = $path;
+     }
+    
+     $validated['organizer_id'] = auth()->user()->organizer->id;
+
+     // Calcul automatique du total des billets
+     $totalTickets = collect($validated['ticket_types'])->sum('total_quantity');
+     $validated['total_tickets'] = $totalTickets;
+     $validated['available_tickets'] = $totalTickets; // Facultatif, si ce champ existe
+     $validated['status'] = 'draft'; // Par défaut, l'événement est créé en brouillon
+     $minPrice = collect($validated['ticket_types'])->min('price');
+        $validated['price'] = $minPrice;
+
+
+    
+     // Créer l'événement
+     $event = Event::create($validated);
+    
+     // Créer les types de billets
+     foreach ($validated['ticket_types'] as $ticketTypeData) {
+        $event->ticketTypes()->create([
+            'name' => $ticketTypeData['name'],
+            'description' => $ticketTypeData['description'] ?? null,
+            'price' => $ticketTypeData['price'],
+            'total_quantity' => $ticketTypeData['total_quantity'],
+            'available_quantity' => $ticketTypeData['total_quantity'],
+            'sort_order' => $ticketTypeData['sort_order'] ?? 0,
+            'is_active' => true,
+
+
         ]);
-        
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('events', 'public');
-            $validated['image'] = $path;
-        }
-        
-        $validated['organizer_id'] = auth()->user()->organizer->id;
-        $validated['available_tickets'] = $validated['total_tickets'];
-        
-        Event::create($validated);
-        
-        return redirect()->route('dashboard.events')->with('success', 'Événement créé avec succès.');
+    }
+    
+    return redirect()->route('dashboard.events')->with('success', 'Événement créé avec succès.');
     }
     
     public function edit(Event $event)

@@ -11,13 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
+       // Ajout de la colonne 'status' à 'events' uniquement si elle n'existe pas
+    if (!Schema::hasColumn('events', 'status')) {
         Schema::table('events', function (Blueprint $table) {
-            $table->string('status')->default('draft'); // ou 'published'
+            $table->string('status')->default('draft');
         });
-        Schema::table('tickets', function (Blueprint $table) {
-            $table->string('status')->default('pending'); // ou 'confirmed', 'canceled'
-            $table->timestamp('paid_at')->nullable(); // pour stocker la date de paiement
-        });        
+    }
+
+    Schema::table('tickets', function (Blueprint $table) {
+        // Vérifie si la colonne 'status' existe déjà
+        if (!Schema::hasColumn('tickets', 'status')) {
+            $table->string('status')->default('pending');
+        }
+
+        // Vérifie si la colonne 'paid_at' existe déjà
+        if (!Schema::hasColumn('tickets', 'paid_at')) {
+            $table->timestamp('paid_at')->nullable();
+        }
+      });   
     }
 
     /**

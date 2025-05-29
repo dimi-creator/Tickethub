@@ -16,21 +16,30 @@ class Ticket extends Model
     protected $fillable = [
         'ticket_number',
         'event_id',
+        'ticket_type_id',
         'user_id',
         'attendee_name',
+        'qr_code',
         'attendee_email',
         'attendee_phone',
+        'unit_price',
         'status',
         'paid_at',
     ];
     
     protected $casts = [
         'paid_at' => 'datetime',
+        'unit_price' => 'decimal:2',
     ];
     
     public function event()
     {
         return $this->belongsTo(Event::class);
+    }
+    
+    public function ticketType()
+    {
+        return $this->belongsTo(TicketType::class);
     }
     
     public function user()

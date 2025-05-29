@@ -12,6 +12,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 
+
 Route::get('/', function () {
     return view('home');
 })->name('home');
@@ -39,7 +40,9 @@ Route::post('/contact', [HomeController::class, 'storeContact'])->name('contact.
 
 // Routes des événements
 Route::get('/evenements', [EventController::class, 'index'])->name('events.index');
-Route::get('/evenements/{event}', [EventController::class, 'show'])->name('events.show');
+Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+Route::post('/payment/pay', [PaymentController::class, 'pay'])->name('payment.pay');
+Route::post('/payment/process', [PaymentController::class, 'processPayment'])->name('payment.process');
 // Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
 
 // Routes protégées par authentification
@@ -50,13 +53,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Achat de billets
-    Route::post('/tickets/acheter', [TicketController::class, 'purchase'])->name('tickets.purchase');
-    Route::get('/tickets/confirmation', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
+    Route::post('/paiement', [PaymentController::class, 'pay'])->name('payment.pay');
+    Route::post('/paiement/create-order', [PaymentController::class, 'createOrder'])->name('payment.createOrder');
+    Route::post('/paiement/capture-order', [PaymentController::class, 'captureOrder'])->name('payment.captureOrder');
     
     // Paiement PayPal
-    // Route::post('/paiement/process', [PaymentController::class, 'process'])->name('payment.process');
     Route::get('/paiement/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::get('/paiement/cancel', [PaymentController::class, 'cancel'])->name('paypal.cancel');
+    Route::get('/paiement/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+    // Route::post('/paiement/process', [PaymentController::class, 'process'])->name('payment.process');
     
     // Dashboard utilisateur
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -89,18 +93,16 @@ Route::middleware('auth')->group(function () {
     // Routes pour le processus d'achat et paiement
     // Route::middleware('auth')->group(function () {
     // Achat de billets
-    Route::post('/tickets/acheter', [TicketController::class, 'purchase'])->name('tickets.purchase');
-    // Route::get('/tickets/confirmation/{transaction_id}', [TicketController::class, 'confirmation'])->name('tickets.confirmation');
-    Route::get('/tickets/confirmation',  [TicketController::class, 'confirmation'])->name('ticket.confirmation');
+    Route::post('/tickets/purchase', [TicketController::class, 'purchase'])->name('tickets.purchase');
+    
+    
+    Route::get('/ticket/confirmation', [TicketController::class, 'confirmation'])->name('ticket.confirmation');
 
     
-    // Paiement
-    // Route::get('/paiement', [PaymentController::class, 'show'])->name('payment.show');
     
-    // Route::post('/paiement/paypal', [PaymentController::class, 'processPaypal'])->name('payment.process.paypal');
-    Route::post('/paiement', [PaymentController::class, 'pay'])->name('payments.pay');
+    Route::get('/paiement', [PaymentController::class, 'pay'])->name('payments.pay');
     Route::post('/paypal/create-order', [PaymentController::class, 'createOrder'])->name('paypal.create-order');
-    Route::get('/paypal/capture-order', [PaymentController::class, 'captureOrder'])->name('paypal.capture-order');
+    Route::post('/paypal/capture-order', [PaymentController::class, 'captureOrder'])->name('paypal.capture-order');
    
 
 });

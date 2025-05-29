@@ -4,15 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class AddQrCodeToTicketsTable extends Migration
 {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::table('organizers', function (Blueprint $table) {
-            $table->string('company_name')->after('id');
+        Schema::table('tickets', function (Blueprint $table) {
+            $table->text('qr_code')->nullable();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('organizers', function (Blueprint $table) {
-            $table->dropColumn('company_name');
+        Schema::table('tickets', function (Blueprint $table) {
+            $table->dropColumn('qr_code');
         });
     }
-};
+}

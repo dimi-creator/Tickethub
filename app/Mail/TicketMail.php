@@ -9,6 +9,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+
 
 class TicketMail extends Mailable
 {
@@ -31,36 +37,51 @@ class TicketMail extends Mailable
      * @return void
      */
     public function __construct(array $tickets, Event $event, $transactionId, $amount)
-    {
-        $this->tickets = $tickets;
-        $this->event = $event;
-        $this->transactionId = $transactionId;
+  {
+    $this->tickets = $tickets;
+    $this->event = $event;
+    $this->transactionId = $transactionId;
+    $this->purchaseDate = now()->format('d/m/Y H:i');
+    $this->amount = $amount;
+    
+    $this->attendeeName = $tickets[0]->attendee_name ?? 'Participant inconnu';
+  }
 
-        $this->purchaseDate = now()->format('d/m/Y H:i');
-        $this->amount = number_format($amount, 2, ',', ' ');
-        $this->attendeeName = $tickets[0]->attendee_name;
-    }
 
     /**
      * Build the message.
      *
      * @return $this
      */
-    public function build()
-    {
-        // Générer le PDF des billets
+   public function build()
+ {
+    $email = $this->subject('Vos billets pour ' . $this->event->title)
+                  ->view('emails.tickets', [
+                      'event' => $this->event,
+                      'transactionId' => $this->transactionId,
+                      'amount' => $this->amount,
+                      'purchaseDate' => now()->format('d/m/Y H:i'),
+                  ]);
+
+    // Attacher tous les billets PDF
+    foreach ($this->tickets as $ticket) {
         $pdf = PDF::loadView('pdf.tickets', [
-            'tickets' => $this->tickets,
+            'ticket' => $ticket,
             'event' => $this->event,
             'transactionId' => $this->transactionId,
-            'purchaseDate' => $this->purchaseDate,
-            'amount' => $this->amount
+            'purchaseDate' => now()->format('d/m/Y H:i'),
+            'amount' => $this->amount,
+            'qrcode' => $ticket->qrcode ?? '', // Assure-toi que chaque ticket a son QR code
         ]);
 
-        return $this->subject('Vos billets pour ' . $this->event->title)
-                    ->view('emails.tickets')
-                    ->attachData($pdf->output(), 'billets-' . $this->transactionId . '.pdf', [
-                        'mime' => 'application/pdf',
-                    ]);
+        $email->attachData(
+            $pdf->output(),
+            'billet_' . $ticket->ticket_number . '.pdf',
+            ['mime' => 'application/pdf']
+        );
     }
+
+    return $email;
+ }
+
 }
